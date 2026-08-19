@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="on-call-tracker" uuid="fc82a082-cbb1-4f6f-8a3f-d9111f17955b">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://on-call-tracker.postgres.database.azure.com:5432/postgres</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="cloud.explorer.internal.metadata" value="Azure for Students" />
+        <property name="cloud.explorer.connection.data.id" value="5fbefd1e-dd87-4af2-a153-efb7bc00abc6" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </component>
+</project>
