@@ -8,6 +8,6 @@ router = APIRouter()
 def health():
     try:
         check_connection()
-        return {"status": "ok"}
+        return {"status": "Database is healthy"}
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
