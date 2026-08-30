@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from src.routers import health,score
 
 app = FastAPI(title="Fairness Scorer",version="0.0.1")
+
+@app.get("/")
+def root():
+    return {"message": "Welcome to the Fairness Scorer API!"}
 app.include_router(health.router)
 app.include_router(score.router)
 

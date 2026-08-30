@@ -1,0 +1,1 @@
+SELECT pg_has_role('saikiran', 'pg_read_all_data', 'member');
