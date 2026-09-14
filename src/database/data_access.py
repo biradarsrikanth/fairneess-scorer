@@ -5,7 +5,7 @@ from src.database.database import engine
 
 
 #Get alerts From the DATABASE for the past "X" days(Default is 90 days)
-def get_alerts_df(days: int = 90) -> pd.DataFrame:
+def get_alerts_df(days: int = 730) -> pd.DataFrame:
     query = text("""
         SELECT a.id, \
                a.severity, a.triggered_at, a.resolved_at,
@@ -19,5 +19,5 @@ def get_alerts_df(days: int = 90) -> pd.DataFrame:
     return df
 
 #Get All Engineers Data
-def get_engineers_df(days: int = 90) -> pd.DataFrame:
+def get_engineers_df(days: int = 730) -> pd.DataFrame:
     return pd.read_sql("SELECT * FROM engineer_data", engine)

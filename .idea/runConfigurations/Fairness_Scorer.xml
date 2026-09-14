@@ -7,8 +7,8 @@
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
-      <env name="AZURE_DB_PASSWORD" value="Fitness6Checker" />
-      <env name="AZURE_DB_USERNAME" value="srikanthadmin" />
+      <env name="AZURE_DB_URL" value="postgresql+psycopg://saikiran:Saikiran525@on-call-tracker.postgres.database.azure.com:5432/postgres?sslmode=require" />
+      <env name="SCORER_PORT" value="8000" />
     </envs>
     <option name="SDK_HOME" value="$PROJECT_DIR$/.venv/Scripts/python.exe" />
     <option name="SDK_NAME" value="Python 3.14 (fairness-scorer)" />

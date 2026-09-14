@@ -1,1 +1,1 @@
-SELECT pg_has_role('saikiran', 'pg_read_all_data', 'member');
+Select *from alert_event where pager_duty_user_id='PB153Q3';
