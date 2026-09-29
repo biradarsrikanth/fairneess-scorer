@@ -1,0 +1,27 @@
+# Runs the scorer on its own. The database (Azure PostgreSQL) is external: this file only connects to it,
+# using AZURE_DB_URL from .env (see .env.example). The scorer only reads the scoring_* views.
+#
+#   docker network create fairness-net   # once per machine, shared with Fairness-Checker
+#   docker compose up --build
+#
+# The gateway (Fairness-Checker repo) finds this service at http://scorer:8000 on fairness-net.
+name: fairness-scorer
+
+services:
+  scorer:
+    build: .
+    image: fairness-scorer:local
+    env_file: .env
+    # Internal service: reachable from this machine for debugging, never from the network
+    ports:
+      - "127.0.0.1:8000:8000"
+    # The image's HEALTHCHECK (/health/live) applies; /health also checks the database
+    networks:
+      fairness-net:
+        aliases:
+          - scorer
+    restart: unless-stopped
+
+networks:
+  fairness-net:
+    external: true
