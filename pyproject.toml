@@ -1,0 +1,36 @@
+# No __init__.py files: src/ and tests/ are namespace packages, found from the project root.
+# Tool caches live inside .venv (git-ignored) instead of cluttering the project folder.
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
+cache_dir = ".venv/.pytest_cache"
+markers = ["integration: needs a PostgreSQL database in TEST_DATABASE_URL"]
+
+[tool.ruff]
+line-length = 110
+cache-dir = ".venv/.ruff_cache"
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "S", "RUF"]
+ignore = [
+    "B008",    # FastAPI's Depends()/Query() in defaults is the intended pattern
+    "RUF001",  # "…" and "×" in docs are intentional
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]  # assert and dummy secrets are fine in tests
+
+[tool.mypy]
+python_version = "3.14"
+files = ["src"]
+explicit_package_bases = true
+cache_dir = ".venv/.mypy_cache"
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
