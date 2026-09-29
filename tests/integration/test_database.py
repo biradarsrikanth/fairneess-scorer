@@ -1,5 +1,5 @@
 """Runs the real SQL against PostgreSQL. Needs TEST_DATABASE_URL, e.g.
-postgresql+psycopg://postgres:postgres@localhost:5432/postgres (the CI workflow provides one)."""
+postgresql+psycopg://postgres:postgres@localhost:5432/postgres."""
 import os
 from datetime import datetime
 from pathlib import Path
