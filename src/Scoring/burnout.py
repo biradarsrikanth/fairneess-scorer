@@ -1,5 +1,5 @@
 import pandas as pd
-from src.database.data_access import get_alerts_df
+from src.database.data_access import get_alerts_df, local_now
 
 
 def risk_label(score: float) -> str:
@@ -10,7 +10,7 @@ def risk_label(score: float) -> str:
 
 def burnout_scores(days: int = 365) -> list[dict]:
     df = get_alerts_df(days)
-    now = pd.Timestamp.utcnow().tz_localize(None)
+    now = local_now()
 
     results = []
     for name, g in df.groupby("engineer_name"):

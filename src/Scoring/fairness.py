@@ -1,5 +1,5 @@
 import numpy as np
-from src.database.data_access import get_alerts_df
+from src.database.data_access import get_alerts_df, get_engineers_df
 
 
 def label_for(g: float) -> str:
@@ -21,7 +21,10 @@ def gini(counts: np.ndarray) -> float:
 
 def team_fairness_score(days: int = 90) -> dict:
     df = get_alerts_df(days)
-    per_engineer = df.groupby("engineer_name").size()
+    # Include engineers with zero alerts, otherwise the Gini hides the most uneven cases
+    all_engineers = get_engineers_df()["name"].unique()
+    per_engineer = (df.groupby("engineer_name").size()
+                    .reindex(all_engineers, fill_value=0))
     g = gini(per_engineer.values)
     total = per_engineer.sum()
     shares = (per_engineer / total * 100).round(1).to_dict() if total else {}
