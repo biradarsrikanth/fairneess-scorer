@@ -52,11 +52,19 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/postgres
 
 ```
 src/
-  main.py            app, middleware, error handlers, metrics
+  main.py            app, middleware, metrics
   core/              settings, logging, API-key auth, request-id middleware
   db/                engine, queries (views only), cached loader
   schemas/           response models (the v1 contract)
   services/          scoring model: pure functions over DataFrames
-  api/               dependencies (window, scope) and routes
+  api/               dependencies (window, scope), routes, error responses
 tests/               unit, API and integration tests
 ```
+
+## Errors
+
+Every error is RFC 9457 problem details (`application/problem+json`), the same contract as the gateway's:
+`type`, `title`, `status`, `detail`, `instance`, plus `code` (`VALIDATION_FAILED`, `UNAUTHORIZED`,
+`NOT_FOUND`, `UPSTREAM_UNAVAILABLE`, `INTERNAL_ERROR`, ...), `errors` (`field`, `message`) for invalid
+parameters, `request_id` (also in the `X-Request-ID` header) and `timestamp`. Server errors never include
+exception messages or database details.

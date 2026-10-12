@@ -22,6 +22,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         incoming = request.headers.get(REQUEST_ID_HEADER, "")
         request_id = incoming if _VALID_REQUEST_ID.match(incoming) else uuid.uuid4().hex
+        # The logging context is reset when this returns; request.state outlives it for the 500 handler
+        request.state.request_id = request_id
         token = request_id_var.set(request_id)
         started = time.perf_counter()
         status_code = 500

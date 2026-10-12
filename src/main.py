@@ -1,12 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from pandas.errors import DatabaseError as PandasDatabaseError
+from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-from sqlalchemy.exc import SQLAlchemyError
 
+from src.api.errors import register_error_handlers
 from src.api.routes import health, score
 from src.core.config import get_settings
 from src.core.logging import configure_logging
@@ -38,18 +36,7 @@ Instrumentator(excluded_handlers=["/metrics", "/health.*"]).instrument(app).expo
     app, endpoint="/metrics", include_in_schema=False)
 
 
-# pandas.read_sql wraps SQLAlchemy errors in its own DatabaseError
-@app.exception_handler(SQLAlchemyError)
-@app.exception_handler(PandasDatabaseError)
-async def database_error_handler(request: Request, exc: Exception):
-    logger.exception("Database error on %s %s", request.method, request.url.path)
-    return JSONResponse(status_code=503, content={"detail": "Database unavailable"})
-
-
-@app.exception_handler(Exception)
-async def unhandled_error_handler(request: Request, exc: Exception):
-    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+register_error_handlers(app)
 
 
 @app.get("/", include_in_schema=False)

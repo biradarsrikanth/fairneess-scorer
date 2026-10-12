@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 
 from src.api.deps import LoaderDep, ScopeDep, SettingsDep, WindowDep, load_scope
+from src.api.errors import Problem
 from src.core.security import require_api_key
 from src.schemas.scores import (
     BurnoutReport,
@@ -16,7 +17,9 @@ from src.services.scope import Scope, ScoreWindow
 from src.services.timeofday import timeofday_counts
 
 router = APIRouter(prefix="/v1/scores", tags=["scores"], dependencies=[Depends(require_api_key)],
-                   responses={401: {"description": "Missing or invalid X-API-Key"}})
+                   responses={401: {"model": Problem, "description": "Missing or invalid X-API-Key"},
+                              422: {"model": Problem, "description": "Invalid window or parameters"},
+                              503: {"model": Problem, "description": "Database unavailable"}})
 
 
 def _window(window: ScoreWindow, timezone: str) -> dict:
@@ -42,7 +45,7 @@ def timeofday(scope: ScopeDep, settings: SettingsDep):
 
 @router.get("/engineers/{engineer_id}", response_model=EngineerReport,
             summary="All scores for one engineer, relative to their team",
-            responses={404: {"description": "Unknown engineer"}})
+            responses={404: {"model": Problem, "description": "Unknown engineer"}})
 def engineer(engineer_id: Annotated[int, Path(ge=1)], window: WindowDep, loader: LoaderDep,
              settings: SettingsDep):
     engineers = loader.engineers()

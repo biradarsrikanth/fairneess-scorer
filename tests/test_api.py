@@ -54,7 +54,8 @@ def test_engineer_without_alerts_gets_zero_scores(client):
 def test_unknown_engineer_is_404(client):
     response = client.get("/v1/scores/engineers/999")
     assert response.status_code == 404
-    assert response.json() == {"detail": "Engineer 999 not found"}
+    assert response.json()["code"] == "NOT_FOUND"
+    assert response.json()["detail"] == "Engineer 999 not found"
 
 
 def test_window_validation(client):
@@ -103,7 +104,9 @@ def test_database_error_returns_503_without_details(client):
     app.dependency_overrides[get_data_loader] = lambda: FailingLoader()
     response = client.get("/v1/scores/fairness")
     assert response.status_code == 503
-    assert response.json() == {"detail": "Database unavailable"}
+    assert response.json()["code"] == "UPSTREAM_UNAVAILABLE"
+    assert response.json()["detail"] == "Database unavailable"
+    assert "secret" not in response.text
 
 
 def test_engineer_off_the_rotation_still_gets_a_report():
@@ -136,4 +139,5 @@ def test_database_error_wrapped_by_pandas_returns_503(client):
     app.dependency_overrides[get_data_loader] = lambda: MissingViewLoader()
     response = client.get("/v1/scores/fairness")
     assert response.status_code == 503
-    assert response.json() == {"detail": "Database unavailable"}
+    assert response.json()["detail"] == "Database unavailable"
+    assert "scoring_alert_v" not in response.text
