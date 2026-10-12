@@ -100,6 +100,26 @@ class EngineerReport(BaseModel):
     time_of_day: TimeOfDayCounts
 
 
+class TrendPeriod(BaseModel):
+    start: datetime
+    end: datetime = Field(description="Exclusive")
+    alert_count: int
+    gini: float = Field(ge=0, le=1)
+    label: FairnessLabel
+    confidence: Literal["LOW", "OK"]
+    average_burnout: float | None = Field(description="Mean burnout score of the engineers compared; "
+                                                      "null when nobody is")
+    high_risk_count: int = Field(description="Engineers with HIGH burnout risk in the period")
+
+
+class TrendReport(BaseModel):
+    window: Window
+    team: str | None
+    granularity: Literal["week", "month"]
+    periods: list[TrendPeriod] = Field(description="Calendar weeks (from Monday) or months; the first and "
+                                                   "last may be partial")
+
+
 class HealthStatus(BaseModel):
     status: Literal["ok", "error"]
     database: Literal["ok", "unavailable"] | None = None

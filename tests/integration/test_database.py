@@ -112,3 +112,21 @@ def test_api_end_to_end(engine):
     assert (asha["night"], asha["morning"]) == (1, 1)
     asha_burnout = next(b for b in burnout["engineers"] if b["name"] == "Asha")
     assert asha_burnout["median_ack_minutes"] == 10.0
+
+
+def test_trend_matches_scoring_each_period_on_its_own(engine):
+    app.dependency_overrides[get_data_loader] = lambda: DataLoader(engine, ttl_seconds=0)
+    try:
+        with TestClient(app, headers={"X-API-Key": API_KEY}) as client:
+            trend = client.get("/v1/scores/trend", params={"start": "2026-09-01", "end": "2026-09-30",
+                                                          "team": "SRE"}).json()
+            week = client.get("/v1/scores/fairness", params={"start": "2026-09-21", "end": "2026-09-27",
+                                                            "team": "SRE"}).json()
+    finally:
+        app.dependency_overrides.clear()
+
+    by_start = {p["start"][:10]: p for p in trend["periods"]}
+    # The escalated P1 (Sunday 27th, India time) and both weekday alerts are in the week of 21 September
+    assert by_start["2026-09-21"]["alert_count"] == week["alert_count"] == 3
+    assert by_start["2026-09-21"]["gini"] == week["gini"]
+    assert by_start["2026-09-01"]["alert_count"] == 0

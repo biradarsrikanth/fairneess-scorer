@@ -1,8 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
-from src.api.deps import LoaderDep, ScopeDep, SettingsDep, WindowDep, load_scope
+from src.api.deps import LoaderDep, ScopeDep, SettingsDep, Team, WindowDep, load_scope
 from src.api.errors import Problem
 from src.core.security import require_api_key
 from src.schemas.scores import (
@@ -10,11 +10,13 @@ from src.schemas.scores import (
     EngineerReport,
     FairnessReport,
     TimeOfDayReport,
+    TrendReport,
 )
 from src.services.burnout import burnout_scores
 from src.services.fairness import team_fairness
 from src.services.scope import Scope, ScoreWindow
 from src.services.timeofday import timeofday_counts
+from src.services.trend import MAX_PERIODS, Granularity, periods, score_trend
 
 router = APIRouter(prefix="/v1/scores", tags=["scores"], dependencies=[Depends(require_api_key)],
                    responses={401: {"model": Problem, "description": "Missing or invalid X-API-Key"},
@@ -41,6 +43,19 @@ def burnout(scope: ScopeDep, settings: SettingsDep):
 def timeofday(scope: ScopeDep, settings: SettingsDep):
     return {"window": _window(scope.window, settings.team_timezone), "team": scope.team,
             "engineers": timeofday_counts(scope)}
+
+
+@router.get("/trend", response_model=TrendReport, summary="Fairness and burnout per week or month")
+def trend(window: WindowDep, loader: LoaderDep, settings: SettingsDep, team: Team = None,
+          granularity: Annotated[Granularity, Query(description="Calendar weeks or months")] = "week"):
+    if len(periods(window, granularity)) > MAX_PERIODS:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT,
+                            f"More than {MAX_PERIODS} periods; use a shorter window or months")
+    rows = score_trend(loader.alerts(window.start, window.end), loader.engineers(),
+                       loader.assignments(window.start, window.end), loader.oncall(window.start, window.end),
+                       window, team, granularity)
+    return {"window": _window(window, settings.team_timezone), "team": team, "granularity": granularity,
+            "periods": rows}
 
 
 @router.get("/engineers/{engineer_id}", response_model=EngineerReport,

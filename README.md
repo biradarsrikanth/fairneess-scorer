@@ -14,6 +14,7 @@ All `/v1` routes need the `X-API-Key` header. Interactive docs: `http://localhos
 | `GET /v1/scores/burnout` | Burnout score (0–100) and its components per engineer |
 | `GET /v1/scores/timeofday` | Alert counts per engineer by night / morning / afternoon / evening |
 | `GET /v1/scores/engineers/{id}` | All of the above for one engineer, within their team |
+| `GET /v1/scores/trend?granularity=week\|month` | Gini, average burnout and high-risk count per calendar week or month of the window (at most 120 periods) |
 | `GET /health/live`, `GET /health` | Liveness; readiness (includes database) |
 | `GET /metrics` | Prometheus metrics |
 
