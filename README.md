@@ -40,6 +40,9 @@ docker compose up --build
 The compose file doesn't run a database; it connects to the one in `AZURE_DB_URL`. The gateway, started from
 its own repo on `fairness-net`, reaches this service at `http://scorer:8000`.
 
+To run the whole app with a throwaway database and made-up data instead, use `docker-compose.yml` in the folder
+that holds the three repositories (see the gateway's `docs/RUNBOOK.md`).
+
 ## Checks
 
 ```bash
