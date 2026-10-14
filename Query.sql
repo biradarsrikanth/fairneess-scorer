@@ -1,1 +1,0 @@
-Select *from alert_event where pager_duty_user_id='PB153Q3';
