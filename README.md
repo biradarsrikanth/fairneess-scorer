@@ -40,8 +40,9 @@ docker compose up --build
 The compose file doesn't run a database; it connects to the one in `AZURE_DB_URL`. The gateway, started from
 its own repo on `fairness-net`, reaches this service at `http://scorer:8000`.
 
-To run the whole app with a throwaway database holding real incident data instead, use `docker-compose.yml` in the folder
-that holds the three repositories (see the gateway's `docs/RUNBOOK.md`).
+To run the whole app with a throwaway database holding real incident data instead, clone the gateway
+(Fairness-Checker) and run `docker compose -f demo/compose.yaml up --build` there; it builds this service from
+`main` on GitHub (see the gateway's `docs/RUNBOOK.md`).
 
 ## Checks
 
