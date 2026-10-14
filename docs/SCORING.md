@@ -31,15 +31,17 @@ load = severity_weight × duration_factor × time_multiplier
 
 The Gini coefficient of load across engineers: 0 means perfectly even, 1 means one person does everything.
 
-Who is compared (`basis`):
-- **`ONCALL_ROTATION`** when on-call shifts exist for the scope: engineers with primary (level 1) on-call time
+Who is compared (`basis`), decided team by team:
+- **`ONCALL_ROTATION`** when on-call shifts exist for the team: engineers with primary (level 1) on-call time
   in the window, plus anyone paged anyway. Someone off the rotation with no pages isn't "lucky", just not on
   call, so they are left out. The report adds `oncall_hours`, `load_per_oncall_hour` and **`rotation_gini`**
   (the Gini of on-call hours: is the rotation itself even?).
 - **`ACTIVE_ENGINEERS`** without shift data: every active engineer, with 0 load if they had no alerts
   (excluding them would hide the most uneven cases), plus inactive engineers who had alerts.
-- Scope is one team (`team=`) or everyone. Comparing across teams with different rotations is usually less
-  meaningful, so prefer a team filter.
+- Scope is one team (`team=`) or every team. For several teams, each team gets its own Gini (listed in
+  `teams`), and `gini` is their average weighted by alerts. Pooling every engineer into one Gini would read
+  differences in team size and volume as unfairness: on the demo data the pooled figure was 0.79 (critical)
+  where the teams' own averaged 0.59. `rotation_gini` is averaged the same way, weighted by on-call hours.
 
 | Gini | Label |
 |---|---|
@@ -58,7 +60,7 @@ Three components, each between 0 and 1:
 | Component | Weight | Definition |
 |---|---|---|
 | `exposure` | 50 | Average per alert of `min(1, night × 1.0 + evening × 0.5 + weekend × 0.5)` |
-| `relative_load` | 30 | Engineer's load ÷ (2 × mean load of engineers in scope), capped at 1; twice the average is the maximum |
+| `relative_load` | 30 | Engineer's load ÷ (2 × mean load of their team's engineers in scope), capped at 1; twice the team average is the maximum |
 | `trend` | 20 | `min(1, max(0, ratio − 1))` with `ratio = (pages in last 30 days + 1) / (pages in the 30 days before + 1)`; doubling is the maximum, and no data at all gives 0 |
 
 ```

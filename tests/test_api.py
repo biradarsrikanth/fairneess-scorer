@@ -17,7 +17,8 @@ def test_requires_api_key(client):
 def test_fairness_contract(client):
     body = client.get("/v1/scores/fairness", params={**WINDOW_PARAMS, "team": "SRE"}).json()
     assert set(body) == {"window", "team", "basis", "gini", "label", "rotation_gini", "confidence",
-                         "alert_count", "engineers"}
+                         "alert_count", "engineers", "teams"}
+    assert [t["team"] for t in body["teams"]] == ["SRE"]
     assert body["window"] == {"start": "2026-09-01T00:00:00+05:30", "end": "2026-10-01T00:00:00+05:30",
                               "timezone": "Asia/Kolkata"}
     assert set(body["engineers"][0]) == {"engineer_id", "name", "team", "alert_count", "escalations_received",

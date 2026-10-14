@@ -32,6 +32,7 @@ class Scope:
     ``work`` has one row per page an engineer received: ``role`` is "primary" for the first-paged engineer
     (full load) and "escalation" for escalations/reassignments (a share of the load).
     ``engineers`` are the engineers being compared, with their primary on-call hours in the window.
+    ``has_rotation`` is true when any team in scope has shifts; each team is compared on its own basis.
     """
 
     window: ScoreWindow
@@ -75,10 +76,12 @@ def build_scope(alerts: pd.DataFrame, engineers: pd.DataFrame, assignments: pd.D
         oncall_hours=engineers["engineer_id"].map(hours).fillna(0.0).astype(float))
     has_rotation = bool(engineers["oncall_hours"].sum() > 0)
 
-    # Who is compared: with shift data, people on the rotation (or who got paged anyway); without it,
-    # active engineers (zero alerts is a data point) plus anyone who got paged
+    # Who is compared, team by team: with shift data, people on the rotation (or who got paged anyway);
+    # without it, active engineers (zero alerts is a data point) plus anyone who got paged. Per team, so one
+    # team's rotation doesn't drop the engineers of a team that has none
+    team_has_rotation = engineers.groupby("team")["oncall_hours"].transform("sum") > 0
     paged = engineers["engineer_id"].isin(work["engineer_id"])
-    eligible = (engineers["oncall_hours"] > 0) if has_rotation else engineers["active"]
+    eligible = (engineers["oncall_hours"] > 0).where(team_has_rotation, engineers["active"]).astype(bool)
     requested = engineers["engineer_id"] == include_engineer_id
     in_scope = engineers[eligible | paged | requested].reset_index(drop=True)
 

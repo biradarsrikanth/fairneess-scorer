@@ -32,19 +32,30 @@ class EngineerLoad(EngineerRef):
     load_per_oncall_hour: float | None
 
 
+class TeamFairness(BaseModel):
+    team: str
+    gini: float = Field(ge=0, le=1)
+    label: FairnessLabel
+    rotation_gini: float | None
+    alert_count: int
+    engineer_count: int
+
+
 class FairnessReport(BaseModel):
     window: Window
     team: str | None
     basis: Literal["ONCALL_ROTATION", "ACTIVE_ENGINEERS"] = Field(
         description="Who is compared: engineers on the on-call rotation, or all active engineers "
                     "when there is no shift data")
-    gini: float = Field(ge=0, le=1, description="Gini coefficient of load across engineers")
+    gini: float = Field(ge=0, le=1, description="Gini coefficient of load across engineers; for several "
+                                                 "teams, the teams' own Ginis averaged, weighted by alerts")
     label: FairnessLabel
     rotation_gini: float | None = Field(
         description="Gini coefficient of primary on-call hours; null without shift data")
     confidence: Literal["LOW", "OK"] = Field(description="LOW when there are too few alerts or engineers")
     alert_count: int
     engineers: list[EngineerLoad]
+    teams: list[TeamFairness] = Field(description="Each team's own fairness, by name")
 
 
 class BurnoutComponents(BaseModel):

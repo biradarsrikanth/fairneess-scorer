@@ -44,7 +44,9 @@ NO_PAGES: dict[Hashable, Any] = {"pages": 0, "exposure": 0.0, "night": 0.0, "eve
 
 def burnout_scores(scope: Scope) -> list[dict]:
     loads = per_engineer_load(scope)
-    mean_load = float(loads["load"].mean()) if len(loads) else 0.0
+    # Load is compared with the engineer's own team: across teams it would mostly measure team volume
+    team_mean_load = loads.groupby("team")["load"].transform("mean") if len(loads) else loads["load"]
+    loads = loads.assign(team_mean_load=team_mean_load)
     pages_by_engineer = _per_engineer_pages(scope.work, scope.window.utc_end)
 
     results = []
@@ -52,6 +54,7 @@ def burnout_scores(scope: Scope) -> list[dict]:
         pages = pages_by_engineer.get(row["engineer_id"], NO_PAGES)
         n = int(pages["pages"])
         exposure = float(pages["exposure"]) if n else 0.0
+        mean_load = float(row["team_mean_load"])
         relative_load = min(1.0, float(row["load"]) / (2 * mean_load)) if mean_load > 0 else 0.0
         # +1 smoothing: no data at all gives 1.0 (flat), and 0 -> 1 page isn't an infinite increase
         ratio = (int(pages["recent"]) + 1) / (int(pages["prior"]) + 1)

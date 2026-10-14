@@ -45,9 +45,43 @@ def _optional(value: float) -> float | None:
     return None if value is None or (isinstance(value, float) and math.isnan(value)) else value
 
 
+def _by_team(df: pd.DataFrame) -> list[dict]:
+    """Each team's own fairness: Gini of load, and of primary on-call hours when it has shifts."""
+    teams = []
+    for name, group in df.groupby("team", sort=True):
+        g = gini(group["load"].to_numpy())
+        hours = group["oncall_hours"].to_numpy()
+        teams.append({
+            "team": name,
+            "gini": round(g, 3),
+            "label": fairness_label(g),
+            "rotation_gini": round(gini(hours), 3) if hours.sum() > 0 else None,
+            "alert_count": int(group["alert_count"].sum()),
+            "engineer_count": len(group),
+            "oncall_hours": float(hours.sum()),
+        })
+    return teams
+
+
+def _weighted(values: list[tuple[float, float]]) -> float:
+    total = sum(weight for _, weight in values)
+    return sum(value * weight for value, weight in values) / total if total else 0.0
+
+
 def team_fairness(scope: Scope) -> dict:
+    """How evenly load falls on the engineers of a team. For several teams (scope.team is None), each team
+    is scored on its own and the Gini is the average of theirs, weighted by alerts: pooling every engineer
+    together would read differences in team size and volume as unfairness."""
     df = per_engineer_load(scope)
-    g = round(gini(df["load"].to_numpy()), 3)
+    teams = _by_team(df)
+    if len(teams) <= 1:
+        g = gini(df["load"].to_numpy())
+        rotation = gini(df["oncall_hours"].to_numpy())
+    else:
+        g = _weighted([(t["gini"], t["alert_count"]) for t in teams])
+        rotation = _weighted([(t["rotation_gini"], t["oncall_hours"]) for t in teams
+                              if t["rotation_gini"] is not None])
+    g = round(g, 3)
     alert_count = int(df["alert_count"].sum())
     low_confidence = alert_count < FAIRNESS_MIN_ALERTS or len(df) < FAIRNESS_MIN_ENGINEERS
     engineers = [
@@ -69,8 +103,9 @@ def team_fairness(scope: Scope) -> dict:
         "basis": "ONCALL_ROTATION" if scope.has_rotation else "ACTIVE_ENGINEERS",
         "gini": g,
         "label": fairness_label(g),
-        "rotation_gini": round(gini(df["oncall_hours"].to_numpy()), 3) if scope.has_rotation else None,
+        "rotation_gini": round(rotation, 3) if scope.has_rotation else None,
         "confidence": "LOW" if low_confidence else "OK",
         "alert_count": alert_count,
         "engineers": engineers,
+        "teams": [{key: value for key, value in t.items() if key != "oncall_hours"} for t in teams],
     }
