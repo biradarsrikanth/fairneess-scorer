@@ -20,9 +20,13 @@ def per_engineer_load(scope: Scope) -> pd.DataFrame:
     """One row per engineer in scope: alert_count (first pages), escalations_received, load, share_pct,
     oncall_hours and load_per_oncall_hour."""
     work = scope.work
-    totals = work.groupby("engineer_id").agg(
-        alert_count=("role", lambda r: int((r == "primary").sum())),
-        escalations_received=("role", lambda r: int((r == "escalation").sum())),
+    # Boolean columns summed per engineer: much faster than a Python function per group
+    totals = work.assign(
+        is_primary=work["role"] == "primary",
+        is_escalation=work["role"] == "escalation",
+    ).groupby("engineer_id").agg(
+        alert_count=("is_primary", "sum"),
+        escalations_received=("is_escalation", "sum"),
         load=("load", "sum"),
     )
     df = scope.engineers.merge(totals, on="engineer_id", how="left")

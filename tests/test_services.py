@@ -81,6 +81,8 @@ def test_escalation_adds_a_share_of_the_load_to_the_receiver():
 
     burnout = by_id(burnout_scores(scope_for("SRE", assignments=assignments)))
     assert burnout[3]["night_pct"] == 100.0 and burnout[3]["escalations_received"] == 1
+    # Escalations carry no time to acknowledge: a page, but no median
+    assert burnout[3]["median_ack_minutes"] is None
 
 
 def test_rotation_basis_compares_only_people_on_call():
