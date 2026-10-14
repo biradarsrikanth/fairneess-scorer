@@ -10,7 +10,7 @@ All `/v1` routes need the `X-API-Key` header. Interactive docs: `http://localhos
 
 | Route | Returns |
 |---|---|
-| `GET /v1/scores/fairness` | Gini of on-call load, per-engineer share |
+| `GET /v1/scores/fairness` | Gini of on-call load, per-engineer share; for several teams, each team's own Gini (`teams`) and their alert-weighted average |
 | `GET /v1/scores/burnout` | Burnout score (0–100) and its components per engineer |
 | `GET /v1/scores/timeofday` | Alert counts per engineer by night / morning / afternoon / evening |
 | `GET /v1/scores/engineers/{id}` | All of the above for one engineer, within their team |
