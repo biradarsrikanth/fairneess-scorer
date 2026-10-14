@@ -16,8 +16,9 @@ def _utc_naive(value: datetime) -> datetime:
 class DataLoader:
     """Loads scoring data, caching each query result for a short time.
 
-    Scores change slowly, and the gateway often requests several scores for the same window in a row.
-    Callers get copies, so nothing can modify the cached frames. All times are naive UTC, except
+    Scores change slowly, and the gateway often requests several scores for the same window at once (the
+    analytics page asks for four in parallel). Only one of them runs each query; the others wait for its
+    result. Callers get copies, so nothing can modify the cached frames. All times are naive UTC, except
     ``triggered_at_local`` (the engineer's team timezone).
     """
 
@@ -26,6 +27,8 @@ class DataLoader:
         self._cache: TTLCache[tuple, pd.DataFrame] = TTLCache(maxsize=256, ttl=max(ttl_seconds, 1))
         self._enabled = ttl_seconds > 0
         self._lock = Lock()
+        # A lock per query being loaded: concurrent callers of the same query wait instead of repeating it
+        self._loading: dict[tuple, Lock] = {}
 
     def alerts(self, start: datetime, end: datetime) -> pd.DataFrame:
         s, e = _utc_naive(start), _utc_naive(end)
@@ -47,8 +50,19 @@ class DataLoader:
             return load()
         with self._lock:
             hit = self._cache.get(key)
-        if hit is None:
-            hit = load()
+            if hit is not None:
+                return hit.copy()
+            loading = self._loading.setdefault(key, Lock())
+        try:
+            with loading:
+                # Whoever held the lock may have loaded it meanwhile
+                with self._lock:
+                    hit = self._cache.get(key)
+                if hit is None:
+                    hit = load()
+                    with self._lock:
+                        self._cache[key] = hit
+        finally:
             with self._lock:
-                self._cache[key] = hit
+                self._loading.pop(key, None)
         return hit.copy()
