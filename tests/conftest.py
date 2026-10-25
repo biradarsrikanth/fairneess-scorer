@@ -12,9 +12,9 @@ os.environ.setdefault("AZURE_DB_URL", "postgresql+psycopg://test:test@localhost:
 os.environ["SCORER_API_KEY"] = API_KEY
 os.environ["TEAM_TIMEZONE"] = "Asia/Kolkata"
 
-from src.api.deps import get_data_loader  # noqa: E402
+from src.api.deps import get_data_loader, load_scope  # noqa: E402
 from src.main import app  # noqa: E402
-from src.services.scope import ScoreWindow, build_scope  # noqa: E402
+from src.services.scope import Scope, ScoreWindow  # noqa: E402
 
 TZ = ZoneInfo("Asia/Kolkata")
 IST = pd.Timedelta(hours=5, minutes=30)
@@ -92,11 +92,8 @@ class FakeLoader:
         return self._oncall.copy()
 
 
-def scope_for(team: str | None = "SRE", **data) -> object:
-    loader = FakeLoader(**data)
-    return build_scope(loader.alerts(WINDOW.start, WINDOW.end), loader.engineers(),
-                       loader.assignments(WINDOW.start, WINDOW.end), loader.oncall(WINDOW.start, WINDOW.end),
-                       WINDOW, team)
+def scope_for(team: str | None = "SRE", **data) -> Scope:
+    return load_scope(FakeLoader(**data), WINDOW, team)
 
 
 @pytest.fixture

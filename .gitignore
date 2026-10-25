@@ -5,5 +5,4 @@
 __pycache__/
 *.py[cod]
 .venv/
-Query.sql
 .idea/

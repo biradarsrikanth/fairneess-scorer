@@ -34,15 +34,6 @@ app = FastAPI(
 app.add_middleware(RequestContextMiddleware)
 Instrumentator(excluded_handlers=["/metrics", "/health.*"]).instrument(app).expose(
     app, endpoint="/metrics", include_in_schema=False)
-
-
 register_error_handlers(app)
-
-
-@app.get("/", include_in_schema=False)
-def root():
-    return {"message": "Welcome to the Fairness Scorer API!"}
-
-
 app.include_router(health.router)
 app.include_router(score.router)

@@ -1,14 +1,9 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
-
-from fastapi.testclient import TestClient
 
 from src.api.deps import get_data_loader
 from src.main import app
 from src.services.trend import periods
-from tests.conftest import API_KEY, WINDOW, WINDOW_PARAMS, FakeLoader, make_alerts
-
-TZ = ZoneInfo("Asia/Kolkata")
+from tests.conftest import TZ, WINDOW, WINDOW_PARAMS, FakeLoader, make_alerts
 
 
 def test_periods_follow_the_calendar():
@@ -46,13 +41,9 @@ def test_months_and_too_many_periods(client):
     assert client.get("/v1/scores/trend", params={**WINDOW_PARAMS, "granularity": "day"}).status_code == 422
 
 
-def test_a_quiet_period_still_compares_active_engineers():
+def test_a_quiet_period_still_compares_active_engineers(client):
     app.dependency_overrides[get_data_loader] = lambda: FakeLoader(alerts=make_alerts().iloc[0:0])
-    try:
-        with TestClient(app, headers={"X-API-Key": API_KEY}) as c:
-            body = c.get("/v1/scores/trend", params={**WINDOW_PARAMS, "team": "SRE"}).json()
-        assert all(p["alert_count"] == 0 for p in body["periods"])
-        # Active engineers are compared even with no alerts (all at zero), so the average is 0, not missing
-        assert {p["average_burnout"] for p in body["periods"]} == {0.0}
-    finally:
-        app.dependency_overrides.clear()
+    body = client.get("/v1/scores/trend", params={**WINDOW_PARAMS, "team": "SRE"}).json()
+    assert all(p["alert_count"] == 0 for p in body["periods"])
+    # Active engineers are compared even with no alerts (all at zero), so the average is 0, not missing
+    assert {p["average_burnout"] for p in body["periods"]} == {0.0}
